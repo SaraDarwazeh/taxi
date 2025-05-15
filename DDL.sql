@@ -1,73 +1,81 @@
--- الجداول الأساسية
+
+CREATE TABLE "User" (
+    user_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    middle_name VARCHAR(50),
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    phone VARCHAR(15) UNIQUE NOT NULL,
+    password VARCHAR(100) NOT NULL
+);
+
+
+CREATE TABLE Manager (
+    user_id INT PRIMARY KEY REFERENCES "User"(user_id)
+);
+
 
 CREATE TABLE Driver (
-    DriverID SERIAL PRIMARY KEY,
-    FirstName VARCHAR(50) NOT NULL,
-    MiddleName VARCHAR(50),
-    LastName VARCHAR(50) NOT NULL,
-    Phone VARCHAR(15) UNIQUE NOT NULL,
-    Email VARCHAR(100) UNIQUE NOT NULL,
-    Age INT CHECK (Age >= 18),
-    LicenseNumber VARCHAR(20) UNIQUE NOT NULL,
-    Rating DECIMAL(3,2) CHECK (Rating BETWEEN 0 AND 5),
-    Availability VARCHAR(20) CHECK (Availability IN ('Available', 'Unavailable'))
+    user_id INT PRIMARY KEY REFERENCES "User"(user_id),
+    age INT CHECK (age >= 18),
+    license_number VARCHAR(30) UNIQUE NOT NULL,
+    rating DECIMAL(3,2) DEFAULT 0 CHECK (rating BETWEEN 0 AND 5),
+    availability VARCHAR(20) CHECK (availability IN ('Available', 'Unavailable'))
 );
 
-CREATE TABLE Car (
-    PlateNumber VARCHAR(15) PRIMARY KEY,
-    Type VARCHAR(30) NOT NULL,
-    Model VARCHAR(50) NOT NULL,
-    Status VARCHAR(20) CHECK (Status IN ('Available', 'In Maintenance', 'Occupied')),
-    FuelLevel DECIMAL(3,2) CHECK (FuelLevel BETWEEN 0 AND 1),
-    DriverID INT UNIQUE,  -- علاقة 1:1 مع السائق
-    FOREIGN KEY (DriverID) REFERENCES Driver(DriverID)
-);
 
 CREATE TABLE Customer (
-    CustomerID SERIAL PRIMARY KEY,
-    FirstName VARCHAR(50) NOT NULL,
-    MiddleName VARCHAR(50),
-    LastName VARCHAR(50) NOT NULL,
-    Phone VARCHAR(15) UNIQUE NOT NULL,
-    Email VARCHAR(100) UNIQUE NOT NULL,
-    RewardPoints INT DEFAULT 0 CHECK (RewardPoints >= 0)
+    user_id INT PRIMARY KEY REFERENCES "User"(user_id),
+    reward_points INT DEFAULT 0 CHECK (reward_points >= 0)
 );
 
--- الجداول المرتبطة
+
+CREATE TABLE Car (
+    plate_number VARCHAR(15) PRIMARY KEY,
+    type VARCHAR(30) NOT NULL,
+    model VARCHAR(50) NOT NULL,
+    status VARCHAR(20) CHECK (status IN ('Available', 'In Maintenance', 'Occupied')),
+    fuel_level DECIMAL(3,2) CHECK (fuel_level BETWEEN 0 AND 1),
+    driver_id INT UNIQUE REFERENCES Driver(user_id) -- علاقة 1:1 مع السائق
+);
+
 
 CREATE TABLE Ride (
-    RideID SERIAL PRIMARY KEY,
-    StartLocation VARCHAR(100) NOT NULL,
-    Destination VARCHAR(100) NOT NULL,
-    StartTime TIMESTAMP NOT NULL,
-    EndTime TIMESTAMP,
-    Cost DECIMAL(10,2) CHECK (Cost >= 0),
-    Status VARCHAR(20) CHECK (Status IN ('Completed', 'Cancelled', 'In Progress')),
-    DriverID INT REFERENCES Driver(DriverID),
-    PlateNumber VARCHAR(15) REFERENCES Car(PlateNumber)
+    ride_id SERIAL PRIMARY KEY,
+    start_location VARCHAR(100) NOT NULL,
+    destination VARCHAR(100) NOT NULL,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP,
+    cost DECIMAL(10,2) CHECK (cost >= 0),
+    status VARCHAR(20) CHECK (status IN ('Completed', 'Cancelled', 'In Progress')),
+    driver_id INT REFERENCES Driver(user_id),
+    plate_number VARCHAR(15) REFERENCES Car(plate_number)
 );
+
 
 CREATE TABLE RideCustomer (
-    RideID INT REFERENCES Ride(RideID) ON DELETE CASCADE,
-    CustomerID INT REFERENCES Customer(CustomerID) ON DELETE CASCADE,
-    PRIMARY KEY (RideID, CustomerID)
+    ride_id INT REFERENCES Ride(ride_id) ON DELETE CASCADE,
+    customer_id INT REFERENCES Customer(user_id) ON DELETE CASCADE,
+    PRIMARY KEY (ride_id, customer_id)
 );
+
 
 CREATE TABLE Payment (
-    PaymentID SERIAL PRIMARY KEY,
-    Amount DECIMAL(10,2) NOT NULL CHECK (Amount >= 0),
-    Method VARCHAR(20) CHECK (Method IN ('Cash', 'Credit Card', 'Digital Wallet')),
-    Date TIMESTAMP NOT NULL,
-    RideID INT REFERENCES Ride(RideID),
-    CustomerID INT REFERENCES Customer(CustomerID)
+    payment_id SERIAL PRIMARY KEY,
+    amount DECIMAL(10,2) NOT NULL CHECK (amount >= 0),
+    method VARCHAR(20) CHECK (method IN ('Cash', 'Credit Card', 'Digital Wallet')),
+    date TIMESTAMP NOT NULL,
+    ride_id INT REFERENCES Ride(ride_id),
+    customer_id INT REFERENCES Customer(user_id)
 );
 
+
 CREATE TABLE Complaint (
-    ComplaintID SERIAL PRIMARY KEY,
-    Type VARCHAR(50) NOT NULL,
-    Description TEXT,
-    ResolutionStatus VARCHAR(50),
-    FeedbackRating DECIMAL(3,2) CHECK (FeedbackRating BETWEEN 0 AND 5),
-    CustomerID INT REFERENCES Customer(CustomerID),
-    DriverID INT REFERENCES Driver(DriverID)
+    complaint_id SERIAL PRIMARY KEY,
+    type VARCHAR(50) NOT NULL,
+    description TEXT,
+    resolution_status VARCHAR(50),
+    feedback_rating DECIMAL(3,2) CHECK (feedback_rating BETWEEN 0 AND 5),
+    customer_id INT REFERENCES Customer(user_id),
+    driver_id INT REFERENCES Driver(user_id)
 );
